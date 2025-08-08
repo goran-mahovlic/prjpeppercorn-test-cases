@@ -7,17 +7,16 @@
 
 module colorBarDVI (
 	input  wire       clk_i,
+	output wire [7:0] led,
 	output wire       TMDS_0_clk_p,
 	output wire       TMDS_0_clk_n,
 	output wire [2:0] TMDS_0_data_p,
 	output wire [2:0] TMDS_0_data_n,
-	output wire TMDS_HPD,
-	output wire TMDS_IN
+	output wire [3:0] vga_r, vga_g, vga_b,
+	output wire vga_hsync, vga_vsync 
 );
 	wire TMDS_0_clk;
 	wire [2:0] TMDS_0_data;
-	assign TMDS_HPD = 1'b1;
-	assign TMDS_IN = 1'b0;
 
 	CC_LVDS_OBUF lvds_obuf_inst [3:0] (
 		.A({TMDS_0_clk, TMDS_0_data}),
@@ -25,14 +24,14 @@ module colorBarDVI (
 		.O_N({TMDS_0_clk_n, TMDS_0_data_n})
 	);
 
-	/* PLL: 25MHz (pix clock) and 125MHz (hdmi clk rate) */
-	wire clk_pix, clk_dvi, lock;
-	pll pll_inst (
-		.clock_in(clk_i),       //  10 MHz reference
-		.clock_out(clk_pix),    //  25 MHz, 0 deg
-		.clock_5x_out(clk_dvi), // 125 MHz, 0 deg
-		.lock_out(lock)
-	);
+        /* PLL: 25MHz (pix clock) and 125MHz (hdmi clk rate) */
+        wire clk_pix, clk_dvi, lock;
+        pll pll_inst2 (
+                .clock_in(clk_i),       //  10 MHz reference
+                .clock_out(clk_pix),    //  25 MHz, 0 deg
+                .clock_5x_out(clk_dvi), // 125 MHz, 0 deg
+                .lock_out(lock)
+        );
 
 	wire rst = ~lock;
 
@@ -74,6 +73,12 @@ module colorBarDVI (
 		.o_g(g_s), 
 		.o_b(b_s)
 	);
+
+	assign vga_r = r_s;
+	assign vga_g = g_s;
+	assign vga_b = b_s;
+	assign vga_hsync = hsync2_s;
+	assign vga_vsync = vsync2_s;
 
 	dvi_core dvi_inst (
 		.clk_pix(clk_pix), 
